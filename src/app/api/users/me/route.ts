@@ -24,7 +24,7 @@ export async function GET() {
       const [f] = await db.select().from(families).where(eq(families.id, user.familyId));
       family = f ?? null;
     }
-    return ok({ user, family });
+    return ok(user);
   } catch (e) {
     if (e instanceof Response) return e;
     return err('Server error', 500);
