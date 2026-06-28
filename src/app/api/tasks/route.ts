@@ -61,7 +61,7 @@ export async function POST(req: Request) {
           points: points ?? 0,
           tags: tags ?? [],
           dueDate: dueDate ? new Date(dueDate) : null,
-          status: autoApprove ? 'approved' : 'pending',
+          status: (autoApprove ? 'approved' : 'pending') as 'pending' | 'approved',
         }))
       )
       .returning();
