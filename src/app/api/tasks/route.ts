@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     if (!user.familyId) return err('Not in a family', 400);
 
     const body = await req.json();
-    const { title, note, points, tags, dueDate, assigneeIds } = body;
+    const { title, note, points, tags, dueDate, assigneeIds, autoApprove } = body;
 
     if (!title?.trim()) return err('title required');
     if (!Array.isArray(assigneeIds) || assigneeIds.length === 0) return err('assigneeIds required');
@@ -61,6 +61,7 @@ export async function POST(req: Request) {
           points: points ?? 0,
           tags: tags ?? [],
           dueDate: dueDate ? new Date(dueDate) : null,
+          status: autoApprove ? 'approved' : 'pending',
         }))
       )
       .returning();
