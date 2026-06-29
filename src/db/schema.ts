@@ -42,6 +42,7 @@ export const tasks = pgTable('tasks', {
   points: integer('points').notNull().default(0),
   status: taskStatusEnum('status').notNull().default('pending'),
   dueDate: timestamp('due_date'),
+  repeat: text('repeat'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
