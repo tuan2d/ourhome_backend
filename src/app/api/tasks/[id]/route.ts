@@ -14,6 +14,8 @@ export async function PATCH(
     const user = await requireAuth();
     if (!user.familyId) return err('Not in a family', 400);
 
+    if (user.role !== 'parent') return err('Chỉ quản lý mới có thể sửa việc', 403);
+
     const body = await req.json();
     const { title, note, tags, points, dueDate } = body;
 
