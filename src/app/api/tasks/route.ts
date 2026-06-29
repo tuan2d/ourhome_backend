@@ -50,8 +50,29 @@ export async function GET(req: Request) {
   }
 }
 
+function generateRepeatDates(startDate: Date, repeat: string, max = 365): Date[] {
+  const dates: Date[] = [];
+  const start = new Date(startDate);
+  start.setHours(12, 0, 0, 0);
+
+  for (let i = 1; i <= max; i++) {
+    const d = new Date(start);
+    if (repeat === 'daily') {
+      d.setDate(start.getDate() + i);
+    } else if (repeat === 'weekly') {
+      d.setDate(start.getDate() + i * 7);
+    } else if (repeat === 'monthly') {
+      d.setMonth(start.getMonth() + i);
+    } else {
+      break;
+    }
+    dates.push(d);
+  }
+  return dates;
+}
+
 // POST /api/tasks — create task, assign to multiple members
-// body: { title, note?, points?, tags?, dueDate?, assigneeIds: string[] }
+// body: { title, note?, points?, tags?, dueDate?, assigneeIds: string[], repeat? }
 export async function POST(req: Request) {
   try {
     const user = await requireAuth();
@@ -66,6 +87,10 @@ export async function POST(req: Request) {
     const isSelfOnly = assigneeIds.length === 1 && assigneeIds[0] === user.id;
     if (isSelfOnly && points && points > 0) return err('Không thể tự thưởng điểm cho bản thân', 400);
 
+    const baseDate = dueDate ? new Date(dueDate) : null;
+    const status = (autoApprove ? 'approved' : 'pending') as 'pending' | 'approved';
+
+    // Insert template tasks (one per assignee)
     const created = await db
       .insert(tasks)
       .values(
@@ -77,12 +102,37 @@ export async function POST(req: Request) {
           note: note ?? null,
           points: points ?? 0,
           tags: tags ?? [],
-          dueDate: dueDate ? new Date(dueDate) : null,
+          dueDate: baseDate,
           repeat: repeat ?? null,
-          status: (autoApprove ? 'approved' : 'pending') as 'pending' | 'approved',
+          parentTaskId: null,
+          status,
         }))
       )
       .returning();
+
+    // Generate repeat instances if repeat + dueDate provided
+    if (repeat && baseDate) {
+      const futureDates = generateRepeatDates(baseDate, repeat, 365);
+      const instances = created.flatMap((tmpl) =>
+        futureDates.map((d) => ({
+          familyId: tmpl.familyId,
+          assignedTo: tmpl.assignedTo,
+          createdBy: tmpl.createdBy,
+          title: tmpl.title,
+          note: tmpl.note,
+          points: tmpl.points,
+          tags: tmpl.tags,
+          dueDate: d,
+          repeat: null,
+          parentTaskId: tmpl.id,
+          status: 'pending' as const,
+        }))
+      );
+
+      if (instances.length > 0) {
+        await db.insert(tasks).values(instances);
+      }
+    }
 
     // Notify each assignee
     for (const task of created) {
