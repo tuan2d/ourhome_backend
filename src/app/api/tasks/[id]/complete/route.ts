@@ -21,12 +21,9 @@ export async function PATCH(
     if (!task) return err('Task not found', 404);
     if (task.status !== 'pending') return err('Task already completed', 400);
 
-    const body = await req.json().catch(() => ({}));
-    const { photoUrl } = body;
-
     await db
       .insert(taskCompletions)
-      .values({ taskId: id, userId: user.id, photoUrl: photoUrl ?? null });
+      .values({ taskId: id, userId: user.id });
 
     const [updated] = await db
       .update(tasks)
