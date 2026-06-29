@@ -49,6 +49,9 @@ export async function POST(req: Request) {
     if (!title?.trim()) return err('title required');
     if (!Array.isArray(assigneeIds) || assigneeIds.length === 0) return err('assigneeIds required');
 
+    const isSelfOnly = assigneeIds.length === 1 && assigneeIds[0] === user.id;
+    if (isSelfOnly && points && points > 0) return err('Không thể tự thưởng điểm cho bản thân', 400);
+
     const created = await db
       .insert(tasks)
       .values(
