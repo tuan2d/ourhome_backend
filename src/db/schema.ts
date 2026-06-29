@@ -5,7 +5,7 @@ import {
 // ── Enums ──────────────────────────────────────────────────────────────────
 
 export const roleEnum = pgEnum('role', ['parent', 'child']);
-export const taskStatusEnum = pgEnum('task_status', ['pending', 'done', 'approved']);
+export const taskStatusEnum = pgEnum('task_status', ['pending', 'done', 'approved', 'expired']);
 export const pointTypeEnum = pgEnum('point_type', ['earn', 'spend']);
 
 // ── Tables ─────────────────────────────────────────────────────────────────
@@ -43,6 +43,7 @@ export const tasks = pgTable('tasks', {
   status: taskStatusEnum('status').notNull().default('pending'),
   dueDate: timestamp('due_date'),
   repeat: text('repeat'),
+  parentTaskId: uuid('parent_task_id'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

@@ -29,7 +29,21 @@ export async function GET(req: Request) {
       .where(and(...conditions))
       .orderBy(tasks.createdAt);
 
-    return ok(rows);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const mapped = rows.map((row) => ({
+      ...row,
+      task: {
+        ...row.task,
+        status:
+          row.task.status === 'pending' && row.task.dueDate && new Date(row.task.dueDate) < today
+            ? 'expired'
+            : row.task.status,
+      },
+    }));
+
+    return ok(mapped);
   } catch (e) {
     if (e instanceof Response) return e;
     return err('Server error', 500);
